@@ -31,10 +31,7 @@ public class Canvas extends JPanel {
                 }
             }
         });
-
-        // setFocusable(true);
-        // requestFocusInWindow();
-
+        
         // maps for acrions 
         InputMap im = getInputMap(WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getActionMap();
