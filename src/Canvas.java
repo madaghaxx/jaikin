@@ -14,6 +14,7 @@ public class Canvas extends JPanel {
     private Timer animationTimer;
     private boolean animating = false;
     private boolean showHelp = false;
+    private boolean closedShape = false;
 
     public Canvas() {
         this.controlPoints = new ArrayList<>();
@@ -79,6 +80,18 @@ public class Canvas extends JPanel {
                     animating = false;
                 }
                 repaint();
+            }
+        });
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0), "toggleClosed");
+        am.put("toggleClosed", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                closedShape = !closedShape;
+                if (!animating && !controlPoints.isEmpty()) {
+                    displayedPoints = new ArrayList<>(controlPoints);
+                    repaint();
+                }
             }
         });
 
@@ -150,11 +163,15 @@ public class Canvas extends JPanel {
             return next;
         }
 
-        next.add(new Point(pts.get(0).x , pts.get(0).y));
+        if (!closedShape) {
+            // Open curve: keep first point
+            next.add(new Point(pts.get(0).x , pts.get(0).y));
+        }
 
-        for (int i = 0; i < n - 1; i++) {
+        int limit = closedShape ? n : n - 1;
+        for (int i = 0; i < limit; i++) {
             Point p0 = pts.get(i);
-            Point p1 = pts.get(i + 1);
+            Point p1 = pts.get((i + 1) % n);
 
             double qx = 0.75 * p0.x + 0.25 * p1.x;
             double qy = 0.75 * p0.y + 0.25 * p1.y;
@@ -165,7 +182,10 @@ public class Canvas extends JPanel {
             next.add(new Point((int) Math.round(rx), (int) Math.round(ry)));
         }
 
-        next.add(new Point(pts.get(n-1).x , pts.get(n-1).y));
+        if (!closedShape) {
+            // Open curve: keep last point
+            next.add(new Point(pts.get(n-1).x , pts.get(n-1).y));
+        }
 
         return next;
     }
@@ -176,13 +196,18 @@ public class Canvas extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // draw lines if >=2 points
         if (displayedPoints.size() >= 2) {
             g2d.setColor(Color.GREEN);
             for (int i = 0; i < displayedPoints.size() - 1; i++) {
                 Point a = displayedPoints.get(i);
                 Point b = displayedPoints.get(i + 1);
                 g2d.drawLine((int)a.x, (int)a.y, (int)b.x, (int)b.y);
+            }
+            // Draw closing line if closed shape
+            if (closedShape && displayedPoints.size() > 2) {
+                Point first = displayedPoints.get(0);
+                Point last = displayedPoints.get(displayedPoints.size() - 1);
+                g2d.drawLine((int)last.x, (int)last.y, (int)first.x, (int)first.y);
             }
         }
 
@@ -199,7 +224,8 @@ public class Canvas extends JPanel {
         if (animating) {
             status = String.format("Animating - step %d/%d (press Enter to restart, Esc to quit)", currentStep+1, maxSteps);
         } else {
-            status = String.format("Points: %d (Left-click to add, H for help). Press Enter to animate (>=3 points).", controlPoints.size());
+            status = String.format("Points: %d | Closed: %s (H for help)", 
+                controlPoints.size(), closedShape ? "YES" : "NO");
         }
         g2d.drawString(status, 8, 16);
 
@@ -214,6 +240,8 @@ public class Canvas extends JPanel {
             g2d.drawString("H - Toggle this help", 20, y);
             y += 20;
             g2d.drawString("C - Clear screen", 20, y);
+            y += 20;
+            g2d.drawString("S - Toggle closed shape", 20, y);
             y += 20;
             g2d.drawString("Enter - Start animation", 20, y);
             y += 20;
