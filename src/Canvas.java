@@ -67,6 +67,21 @@ public class Canvas extends JPanel {
             }
         });
 
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0), "clearScreen");
+        am.put("clearScreen", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controlPoints.clear();
+                displayedPoints.clear();
+                currentStep = 0;
+                if (animating) {
+                    animationTimer.stop();
+                    animating = false;
+                }
+                repaint();
+            }
+        });
+
         int delayMs = 700;
         animationTimer = new Timer(delayMs, evt -> {
             stepChaikinAnimation();
@@ -197,6 +212,8 @@ public class Canvas extends JPanel {
             g2d.drawString("HELP - Keyboard Shortcuts:", 20, y);
             y += 20;
             g2d.drawString("H - Toggle this help", 20, y);
+            y += 20;
+            g2d.drawString("C - Clear screen", 20, y);
             y += 20;
             g2d.drawString("Enter - Start animation", 20, y);
             y += 20;
