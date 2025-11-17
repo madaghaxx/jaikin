@@ -4,6 +4,11 @@ import java.awt.Color;
 
 public class Circle extends Colored implements Drawable {
     Point center;
+
+    public Point getCenter() {
+        return center;
+    }
+
     int radius;
     static double radian = Math.PI / 180;
 
