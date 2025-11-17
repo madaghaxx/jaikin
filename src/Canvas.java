@@ -54,12 +54,10 @@ public class Canvas extends JPanel {
                     draggedPoint.y = e.getY();
                     
                     // Update in real-time during drag
-                    displayedPoints = new ArrayList<>(controlPoints);
                     if (animating) {
-                        // Recalculate the current animation step with new positions
-                        for (int i = 0; i < currentStep; i++) {
-                            displayedPoints = chaikinIteration(displayedPoints);
-                        }
+                        updateDisplayedPointsForCurrentStep();
+                    } else {
+                        displayedPoints = new ArrayList<>(controlPoints);
                     }
                     
                     repaint();
@@ -108,7 +106,6 @@ public class Canvas extends JPanel {
                 controlPoints.clear();
                 displayedPoints.clear();
                 currentStep = 0;
-                closedShape = false;  // Reset closed shape when clearing
                 if (animating) {
                     animationTimer.stop();
                     animating = false;
@@ -121,22 +118,33 @@ public class Canvas extends JPanel {
         am.put("toggleClosed", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (controlPoints.size() >= 3) {
-                    closedShape = !closedShape;
-                    if (animating) {
-                        restartAnimation();
-                    } else {
-                        displayedPoints = new ArrayList<>(controlPoints);
-                        repaint();
-                    }
+                if (controlPoints.size() < 3) {
+                    return; // Need at least 3 points for closed shape
                 }
+                
+                closedShape = !closedShape;
+                
+                if (animating) {
+                    // Recalculate current step with new closure setting
+                    updateDisplayedPointsForCurrentStep();
+                } else {
+                    displayedPoints = new ArrayList<>(controlPoints);
+                }
+                repaint();
             }
         });
 
-        int delayMs = 700;
+        int delayMs = 500; // Faster for smoother animation
         animationTimer = new Timer(delayMs, evt -> {
             stepChaikinAnimation();
         });
+    }
+
+    private void updateDisplayedPointsForCurrentStep() {
+        displayedPoints = new ArrayList<>(controlPoints);
+        for (int i = 0; i < currentStep; i++) {
+            displayedPoints = chaikinIteration(displayedPoints);
+        }
     }
 
     private void handleEnterPressed() {
@@ -241,8 +249,7 @@ public class Canvas extends JPanel {
                 Point b = displayedPoints.get(i + 1);
                 g2d.drawLine((int)a.x, (int)a.y, (int)b.x, (int)b.y);
             }
-            // Draw closing line only if closed shape and we have 3+ control points
-            if (closedShape && controlPoints.size() >= 3) {
+            if (closedShape) {
                 Point first = displayedPoints.get(0);
                 Point last = displayedPoints.get(displayedPoints.size() - 1);
                 g2d.drawLine((int)last.x, (int)last.y, (int)first.x, (int)first.y);
@@ -279,7 +286,8 @@ public class Canvas extends JPanel {
         g2d.setColor(Color.LIGHT_GRAY);
         String status;
         if (animating) {
-            status = String.format("Animating - step %d/%d (press Enter to restart, Esc to quit)", currentStep+1, maxSteps);
+            status = String.format("Animating - step %d/%d | points: %d (Enter to restart)", 
+                currentStep+1, maxSteps, displayedPoints.size());
         } else {
             String closedStatus = controlPoints.size() < 3 ? "N/A" : (closedShape ? "YES" : "NO");
             status = String.format("Points: %d | Closed: %s (H for help)", 
@@ -299,7 +307,7 @@ public class Canvas extends JPanel {
             y += 20;
             g2d.drawString("C - Clear screen", 20, y);
             y += 20;
-            g2d.drawString("S - Toggle closed shape (3+ pts)", 20, y);
+            g2d.drawString("S - Toggle closed shape", 20, y);
             y += 20;
             g2d.drawString("Enter - Start animation", 20, y);
             y += 20;
