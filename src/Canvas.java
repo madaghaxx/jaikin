@@ -49,10 +49,19 @@ public class Canvas extends JPanel {
         addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (draggedPoint != null && !animating) {
+                if (draggedPoint != null) {
                     draggedPoint.x = e.getX();
                     draggedPoint.y = e.getY();
+                    
+                    // Update in real-time during drag
                     displayedPoints = new ArrayList<>(controlPoints);
+                    if (animating) {
+                        // Recalculate the current animation step with new positions
+                        for (int i = 0; i < currentStep; i++) {
+                            displayedPoints = chaikinIteration(displayedPoints);
+                        }
+                    }
+                    
                     repaint();
                 }
             }
