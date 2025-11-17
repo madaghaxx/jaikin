@@ -6,7 +6,7 @@ import java.util.List;
 import javax.swing.*;
 
 public class Canvas extends JPanel {
-    private static final int POINT_RADIUS = 3;
+    private static final int POINT_RADIUS = 6;
     private final List<Point> controlPoints;      
     private List<Point> displayedPoints;          // will change them in animations 7 step 
     private final int maxSteps = 7;
@@ -243,11 +243,30 @@ public class Canvas extends JPanel {
             }
         }
 
-        // draw control points 
-        g2d.setColor(Color.WHITE);
-        for (Point p : displayedPoints) {
+        // draw smoothed curve points (smaller, green)
+        if (animating) {
+            g2d.setColor(new Color(100, 255, 100, 150));
+            for (Point p : displayedPoints) {
+                g2d.fillOval((int)p.x - 2, (int)p.y - 2, 4, 4);
+            }
+        } else {
+            // When not animating, draw the curve points
+            g2d.setColor(Color.WHITE);
+            for (Point p : displayedPoints) {
+                g2d.fillOval((int)p.x - 2, (int)p.y - 2, 4, 4);
+            }
+        }
+
+        // Always draw control points (larger, white with red outline)
+        g2d.setColor(Color.RED);
+        for (Point p : controlPoints) {
             g2d.fillOval((int)p.x - POINT_RADIUS, (int)p.y - POINT_RADIUS,
-                    POINT_RADIUS, POINT_RADIUS );
+                    POINT_RADIUS * 2, POINT_RADIUS * 2);
+        }
+        g2d.setColor(Color.WHITE);
+        for (Point p : controlPoints) {
+            g2d.fillOval((int)p.x - POINT_RADIUS + 1, (int)p.y - POINT_RADIUS + 1,
+                    POINT_RADIUS * 2 - 2, POINT_RADIUS * 2 - 2);
         }
 
         g2d.setFont(g2d.getFont().deriveFont(12f));
@@ -280,6 +299,8 @@ public class Canvas extends JPanel {
             g2d.drawString("Esc - Quit", 20, y);
             y += 20;
             g2d.drawString("Left-click - Add point", 20, y);
+            y += 20;
+            g2d.drawString("Drag - Move control points (anytime)", 20, y);
         }
     }
 
