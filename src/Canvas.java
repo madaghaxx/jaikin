@@ -1,4 +1,3 @@
-
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -28,10 +27,8 @@ public class Canvas extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
-                    // Check if clicking near an existing point for dragging
                     draggedPoint = findNearestPoint(e.getX(), e.getY(), DRAG_THRESHOLD);
                     if (draggedPoint == null && !animating) {
-                        // Add new point if not dragging and not animating
                         controlPoints.add(new Point(e.getX(), e.getY()));
                         displayedPoints.add(new Point(e.getX(), e.getY()));
                         repaint();
@@ -84,9 +81,8 @@ public class Canvas extends JPanel {
                 Window w = SwingUtilities.getWindowAncestor(Canvas.this);
                 if (w != null) {
                     w.dispose();
-                } else {
-                    System.exit(0);
                 }
+                System.exit(0);
             }
         });
 
@@ -176,7 +172,8 @@ public class Canvas extends JPanel {
         animating = true;
         currentStep = 0;
         displayedPoints = new ArrayList<>(controlPoints);
-        animationTimer.start();
+        repaint();  
+        animationTimer.restart(); 
     }
 
     private void stepChaikinAnimation() {
@@ -210,7 +207,6 @@ public class Canvas extends JPanel {
         }
 
         if (!closedShape) {
-            // Open curve: keep first point
             next.add(new Point(pts.get(0).x , pts.get(0).y));
         }
 
@@ -229,7 +225,6 @@ public class Canvas extends JPanel {
         }
 
         if (!closedShape) {
-            // Open curve: keep last point
             next.add(new Point(pts.get(n-1).x , pts.get(n-1).y));
         }
 
@@ -256,26 +251,14 @@ public class Canvas extends JPanel {
             }
         }
 
-        // draw smoothed curve points (smaller, green)
         if (animating) {
             g2d.setColor(new Color(100, 255, 100, 150));
             for (Point p : displayedPoints) {
                 g2d.fillOval((int)p.x - 2, (int)p.y - 2, 4, 4);
             }
-        } else {
-            // When not animating, draw the curve points
-            g2d.setColor(Color.WHITE);
-            for (Point p : displayedPoints) {
-                g2d.fillOval((int)p.x - 2, (int)p.y - 2, 4, 4);
-            }
         }
 
-        // Always draw control points (larger, white with red outline)
-        g2d.setColor(Color.RED);
-        for (Point p : controlPoints) {
-            g2d.fillOval((int)p.x - POINT_RADIUS, (int)p.y - POINT_RADIUS,
-                    POINT_RADIUS * 2, POINT_RADIUS * 2);
-        }
+      
         g2d.setColor(Color.WHITE);
         for (Point p : controlPoints) {
             g2d.fillOval((int)p.x - POINT_RADIUS + 1, (int)p.y - POINT_RADIUS + 1,
@@ -329,7 +312,5 @@ public class Canvas extends JPanel {
         return null;
     }
 
-    public List<Point> getControlPoints() {
-        return new ArrayList<>(controlPoints);
-    }
+   
 }
