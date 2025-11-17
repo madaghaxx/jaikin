@@ -1,9 +1,9 @@
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 
 public class Canvas extends JPanel {
     private static final int POINT_RADIUS = 3;
@@ -13,6 +13,7 @@ public class Canvas extends JPanel {
     private int currentStep = 0;
     private Timer animationTimer;
     private boolean animating = false;
+    private boolean showHelp = false;
 
     public Canvas() {
         this.controlPoints = new ArrayList<>();
@@ -54,6 +55,15 @@ public class Canvas extends JPanel {
                 } else {
                     System.exit(0);
                 }
+            }
+        });
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_H, 0), "toggleHelp");
+        am.put("toggleHelp", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showHelp = !showHelp;
+                repaint();
             }
         });
 
@@ -174,9 +184,26 @@ public class Canvas extends JPanel {
         if (animating) {
             status = String.format("Animating - step %d/%d (press Enter to restart, Esc to quit)", currentStep+1, maxSteps);
         } else {
-            status = String.format("Points: %d (Left-click to add). Press Enter to animate (>=3 points). Esc to quit.", controlPoints.size());
+            status = String.format("Points: %d (Left-click to add, H for help). Press Enter to animate (>=3 points).", controlPoints.size());
         }
         g2d.drawString(status, 8, 16);
+
+        // Draw help text if enabled
+        if (showHelp) {
+            g2d.setColor(new Color(0, 0, 0, 200));
+            g2d.fillRect(10, 30, 280, 130);
+            g2d.setColor(Color.WHITE);
+            int y = 50;
+            g2d.drawString("HELP - Keyboard Shortcuts:", 20, y);
+            y += 20;
+            g2d.drawString("H - Toggle this help", 20, y);
+            y += 20;
+            g2d.drawString("Enter - Start animation", 20, y);
+            y += 20;
+            g2d.drawString("Esc - Quit", 20, y);
+            y += 20;
+            g2d.drawString("Left-click - Add point", 20, y);
+        }
     }
 
     public List<Point> getControlPoints() {
