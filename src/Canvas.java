@@ -7,7 +7,7 @@ import javax.swing.*;
 public class Canvas extends JPanel {
     private static final int POINT_RADIUS = 6;
     private final List<Point> controlPoints;      
-    private List<Point> displayedPoints;          // will change them in animations 7 step 
+    private List<Point> displayedPoints;
     private final int maxSteps = 7;
     private int currentStep = 0;
     private Timer animationTimer;
@@ -30,7 +30,6 @@ public class Canvas extends JPanel {
                     draggedPoint = findNearestPoint(e.getX(), e.getY(), DRAG_THRESHOLD);
                     if (draggedPoint == null && !animating) {
                         controlPoints.add(new Point(e.getX(), e.getY()));
-                        displayedPoints.add(new Point(e.getX(), e.getY()));
                         repaint();
                     }
                     requestFocusInWindow();
@@ -50,11 +49,8 @@ public class Canvas extends JPanel {
                     draggedPoint.x = e.getX();
                     draggedPoint.y = e.getY();
                     
-                    // Update in real-time during drag
                     if (animating) {
                         updateDisplayedPointsForCurrentStep();
-                    } else {
-                        displayedPoints = new ArrayList<>(controlPoints);
                     }
                     
                     repaint();
@@ -115,31 +111,32 @@ public class Canvas extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (controlPoints.size() < 3) {
-                    return; // Need at least 3 points for closed shape
+                    return;
                 }
                 
                 closedShape = !closedShape;
                 
                 if (animating) {
-                    // Recalculate current step with new closure setting
                     updateDisplayedPointsForCurrentStep();
-                } else {
-                    displayedPoints = new ArrayList<>(controlPoints);
                 }
                 repaint();
             }
         });
 
-        int delayMs = 500; // Faster for smoother animation
+        int delayMs = 500;
         animationTimer = new Timer(delayMs, evt -> {
             stepChaikinAnimation();
         });
     }
 
     private void updateDisplayedPointsForCurrentStep() {
-        displayedPoints = new ArrayList<>(controlPoints);
-        for (int i = 0; i < currentStep; i++) {
-            displayedPoints = chaikinIteration(displayedPoints);
+        if (currentStep == 1) {
+            displayedPoints = new ArrayList<>(controlPoints);
+        } else {
+            displayedPoints = new ArrayList<>(controlPoints);
+            for (int i = 1; i < currentStep; i++) {
+                displayedPoints = chaikinIteration(displayedPoints);
+            }
         }
     }
 
@@ -156,14 +153,13 @@ public class Canvas extends JPanel {
             return;
         }
 
-        // n >= 3 -> start animation
         startAnimation();
     }
 
     private void startAnimation() {
         animating = true;
         currentStep = 0;
-        displayedPoints = new ArrayList<>(controlPoints);
+        displayedPoints = new ArrayList<>();
         animationTimer.start();
     }
 
@@ -171,7 +167,7 @@ public class Canvas extends JPanel {
         animationTimer.stop();
         animating = true;
         currentStep = 0;
-        displayedPoints = new ArrayList<>(controlPoints);
+        displayedPoints = new ArrayList<>();
         repaint();  
         animationTimer.restart(); 
     }
@@ -180,18 +176,23 @@ public class Canvas extends JPanel {
         if (controlPoints.size() <= 2) {
             animationTimer.stop();
             animating = false;
-            displayedPoints = new ArrayList<>(controlPoints);
+            displayedPoints = new ArrayList<>();
             repaint();
             return;
         }
 
-        // each time 
-        displayedPoints = chaikinIteration(displayedPoints);
         currentStep++;
+        
+        if (currentStep == 1) {
+            displayedPoints = new ArrayList<>(controlPoints);
+        } else {
+            displayedPoints = chaikinIteration(displayedPoints);
+        }
+        
         repaint();
 
         if (currentStep >= maxSteps) {
-            displayedPoints = new ArrayList<>(controlPoints);
+            displayedPoints = new ArrayList<>();
             currentStep = 0;
         }
     }
@@ -269,8 +270,7 @@ public class Canvas extends JPanel {
         g2d.setColor(Color.LIGHT_GRAY);
         String status;
         if (animating) {
-            status = String.format("Animating - step %d/%d | points: %d (Enter to restart)", 
-                currentStep+1, maxSteps, displayedPoints.size());
+            status = String.format("Animating");
         } else {
             String closedStatus = controlPoints.size() < 3 ? "N/A" : (closedShape ? "YES" : "NO");
             status = String.format("Points: %d | Closed: %s (H for help)", 
@@ -278,7 +278,6 @@ public class Canvas extends JPanel {
         }
         g2d.drawString(status, 8, 16);
 
-        // Draw help text if enabled
         if (showHelp) {
             g2d.setColor(new Color(0, 0, 0, 200));
             g2d.fillRect(10, 30, 280, 130);
