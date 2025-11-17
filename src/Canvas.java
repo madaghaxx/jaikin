@@ -15,6 +15,8 @@ public class Canvas extends JPanel {
     private boolean animating = false;
     private boolean showHelp = false;
     private boolean closedShape = false;
+    private Point draggedPoint = null;
+    private static final int DRAG_THRESHOLD = 10;
 
     public Canvas() {
         this.controlPoints = new ArrayList<>();
@@ -25,11 +27,33 @@ public class Canvas extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1 && !animating) {
-                    controlPoints.add(new Point(e.getX(), e.getY()));
-                    displayedPoints.add(new Point(e.getX(), e.getY()));
-                    repaint();
+                if (e.getButton() == MouseEvent.BUTTON1) {
+                    // Check if clicking near an existing point for dragging
+                    draggedPoint = findNearestPoint(e.getX(), e.getY(), DRAG_THRESHOLD);
+                    if (draggedPoint == null && !animating) {
+                        // Add new point if not dragging and not animating
+                        controlPoints.add(new Point(e.getX(), e.getY()));
+                        displayedPoints.add(new Point(e.getX(), e.getY()));
+                        repaint();
+                    }
                     requestFocusInWindow();
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                draggedPoint = null;
+            }
+        });
+
+        addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (draggedPoint != null && !animating) {
+                    draggedPoint.x = e.getX();
+                    draggedPoint.y = e.getY();
+                    displayedPoints = new ArrayList<>(controlPoints);
+                    repaint();
                 }
             }
         });
@@ -203,8 +227,7 @@ public class Canvas extends JPanel {
                 Point b = displayedPoints.get(i + 1);
                 g2d.drawLine((int)a.x, (int)a.y, (int)b.x, (int)b.y);
             }
-            // Draw closing line if closed shape
-            if (closedShape && displayedPoints.size() > 2) {
+            if (closedShape) {
                 Point first = displayedPoints.get(0);
                 Point last = displayedPoints.get(displayedPoints.size() - 1);
                 g2d.drawLine((int)last.x, (int)last.y, (int)first.x, (int)first.y);
@@ -249,6 +272,16 @@ public class Canvas extends JPanel {
             y += 20;
             g2d.drawString("Left-click - Add point", 20, y);
         }
+    }
+
+    private Point findNearestPoint(int x, int y, int threshold) {
+        for (Point p : controlPoints) {
+            double dist = Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2));
+            if (dist <= threshold) {
+                return p;
+            }
+        }
+        return null;
     }
 
     public List<Point> getControlPoints() {
